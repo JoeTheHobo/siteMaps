@@ -22,13 +22,9 @@ class fileSystem {
         this.cssBackground = 
         this.goBack = obj.goBack;
         this.addMenu = obj.addMenu;
-        this.addList = [folder,building,door,template];
+        this.addList = [folder,building,door];
 
         this.path = name + ":";
-
-        let templateFolder = new folder("Templates",{isKillable: false,addList: [template]});
-        templateFolder.add(new template("basic"));
-        this.add(templateFolder);
     }
     add = function(toAdd) {
         toAdd.display = this.display;
@@ -42,9 +38,12 @@ class fileSystem {
     }
     open = function() {
         this.updateCSS();
+        testForwardAndBackDOM(false);
         
         let addMenu = this.addMenu;
         this.goBack.onclick = function() {
+            
+            testForwardAndBackDOM(false);
             addMenu.style.display = 'none';
         }
 
@@ -75,7 +74,7 @@ class folder {
         this.goBack = null;//To Be set From OS:
         this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
         this.addMenu = null; //To Be Set From OS;
-        this.addList = obj.addList ? obj.addList : [folder,building,door,template];
+        this.addList = obj.addList ? obj.addList : [folder,building,door];
         this.headers = obj.headers ? obj.headers : [];
 
 
@@ -90,14 +89,18 @@ class folder {
 
         this.kids.push(toAdd);
     }
-    open = function() {
+    open = function(skipPathTest = false) {
         
         let parent = this.parent;
         let addMenu = this.addMenu;
         let path = this.path;
+        if (!skipPathTest) if (path !== forwardPath[0]) forwardPath = [];
+        testForwardAndBackDOM();
         this.goBack.onclick = function() {
-            forwardPath = path;
-            parent.open();
+            if (forwardPath[0] !== path)
+                forwardPath.unshift(path);
+            testForwardAndBackDOM();
+            parent.open(true);
             addMenu.style.display = 'none';
         }
 
@@ -109,6 +112,68 @@ class folder {
         if (this.pathDisplay) this.pathDisplay.innerHTML = getPathName(this.path,this.pathDisplay);
         return this.path;
     }
+    createScreen = function() {
+        
+        $('addFolderScreen').style.display = "flex";
+        $('afsInput').value = "";
+        $('afsInput').placeholder = "Untitled " + findUntitleds();
+        $('afsCreate').addList = this.addList;
+        $('afsCreate').onclick = function() {
+            let name = $('afsInput').value;
+            if (name == "") name = $('afsInput').placeholder;
+
+            let dir = findDirectory(os);
+            let newFolder = new folder(name);
+            dir.add(newFolder)
+            
+
+            for (let i = 0; i < this.addList.length; i++) {
+                if ($("afsCheckBox" + i).style.background !== "") {
+                    let a = new this.addList[i]("Untitled " + (i+1));
+                    newFolder.add(a)
+                }
+            }
+
+            dir.open();
+            $('addFolderScreen').style.display = "none";
+        }
+        
+        let div = '';
+        for (let i = 0; i < this.addList.length; i++) {
+            div += `<div class="aiCheckGroup">
+                <div class="aiCheckTitle">${this.addList[i].name.charAt(0).toUpperCase() + this.addList[i].name.substring(1,this.addList[i].name.length)}</div>
+                <div id="afsCheckBox${i}" class="aiCheckBox"></div>
+            </div>`
+        }
+        $('.afsOptionList').innerHTML = div;
+
+        for (let i = 0; i < this.addList.length; i++) {
+            $("afsCheckBox" + i).Class = this.addList[i];
+            $("afsCheckBox" + i).onclick = function() {
+                if (this.style.background !== "") {
+                    this.style.background = "";
+                } else {
+                    this.style.background = "url(img/checkbox.png) no-repeat center center";
+                    this.style.backgroundSize = "33px 33px";
+                }
+            }
+        }
+    }
+}
+function testNameInDir(dir,name) {
+    for (let i = 0; i < dir.kids.length; i++) {
+        if (dir.kids[i].name == name) return false;
+    }
+    return true;
+}
+function findUntitleds() {
+    let path = $('path').innerHTML;
+    let dir = findDirectory(os,path);
+    let count = 1;
+    for (let i = 0; i < dir.kids.length; i++) {
+        if (dir.kids[i].name == "Untitled " + count) count++;
+    }
+    return count;
 }
 class building {
     constructor(name,obj = {}) {
@@ -137,11 +202,20 @@ class building {
 
         this.kids.push(toAdd);
     }
-    open = function() {
+    open = function(skipPathTest) {
+        testForwardAndBackDOM();
         
         let parent = this.parent;
         let addMenu = this.addMenu;
+        let path = this.path;
+        
+        if (!skipPathTest) if (path !== forwardPath[0]) forwardPath = [];
+        testForwardAndBackDOM();
         this.goBack.onclick = function() {
+            if (forwardPath[0] !== path)
+                forwardPath.unshift(path);
+            testForwardAndBackDOM();
+            console.log(forwardPath)
             parent.open();
             addMenu.style.display = 'none';
         }
@@ -183,31 +257,6 @@ class door {
         
     }
 }
-class template {
-    constructor(name,obj = {}) {
-        this.iconSRC = "img/book.png"
-        this.name = name;
-        
-        this.location = obj.location ? obj.location : false;
-        this.type = obj.type ? obj.type : false;
-        this.brand = obj.brand ? obj.brand : false;
-        this.remarks = obj.remarks ? obj.remarks : false;
-        this.discription = obj.discription ? obj.discription : false;
-        this.keyedTo = obj.keyedTo ? obj.keyedTo : false;
-        this.finish = obj.finish ? obj.finish : false;
-
-        this.display = null; //To Be Set From OS;
-        this.path = null; //To Be set From OS:
-        this.pathDisplay = null; //To Be Set From OS;
-        this.goBack = null;//To Be set From OS:
-        this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
-        this.addMenu = null; //To Be Set From OS;
-    }
-    open = function() {
-        
-    }
-}
-
 function buildAddMenu(addMenuDom,addList,parent) {
     addMenuDom.innerHTML = "<div class='addItemText'>Add Item</div>";
     for (let i = 0; i < addList.length; i++) {
@@ -218,8 +267,8 @@ function buildAddMenu(addMenuDom,addList,parent) {
 
         div.onclick = function() {
             addMenu();
-            parent.add(new div.Class(prompt("Name?")))
-            parent.open();
+            let newClass = new div.Class();
+            newClass.createScreen();
         }
     }
 }
@@ -261,6 +310,11 @@ function render(file,dom) {
 var mylatesttap;
 var oldEle;
 function doubletap(element) {
+
+    if (!isDoubleClick) {
+        openFolder(element);
+        return;
+    }
 
    var now = new Date().getTime();
    var timesince = now - mylatesttap;
@@ -403,9 +457,29 @@ function openFolder(element) {
     element.file.open();
 }
 $('goForward').addEventListener("click",function() {
-    goInDirectory(os,forwardPath);
+    if (forwardPath.length > 0) {
+        goInDirectory(os,forwardPath[0]);
+        forwardPath.shift();
+    }
+
+    testForwardAndBackDOM();
 })
-function goInDirectory(dir,path) {
+function testForwardAndBackDOM(back = true) {
+    if (forwardPath.length == 0) {
+        $("goForward").classList.add("grayed") 
+    } else {
+        $("goForward").classList.remove("grayed")
+    }
+
+    if (back) {
+        $("goBack").classList.remove("grayed");
+    } else {
+        $("goBack").classList.add("grayed");
+    }
+
+}
+function findDirectory(dir,path) {
+    path = path ? path : $('path').innerHTML;
     let paths = path.split('/');
     let splitColon = paths[0].split(":");
     paths.shift();
@@ -418,12 +492,18 @@ function goInDirectory(dir,path) {
             }
         }
     }
+    return dir;
+}
+function goInDirectory(dir,path) {
+    dir = findDirectory(dir,path);
     dir.open();
 }
 
-var fileSize = 1.2;
+var fileSize = 1;
 let filePath = "";
-let forwardPath = false;
+let isDoubleClick = false;
+let forwardPath = [];
+testForwardAndBackDOM(false);
 
 let os = new fileSystem("J",{
     display: $("fileSystem"),
@@ -432,7 +512,7 @@ let os = new fileSystem("J",{
     addMenu: $(".addMenu"),
 });
 
-os.add(new folder("File Name 1",{
+os.add(new folder("Untitled 1",{
     headers: ["Santaquin City Police Department","346 N 100 E, Santaquin"],
 }))
 
