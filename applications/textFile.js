@@ -45,6 +45,7 @@ class textFile extends application {
 
         textArea.addEventListener("input",function() {
             Class.storage = textArea.value;
+            Class.save();
         })
 
     }

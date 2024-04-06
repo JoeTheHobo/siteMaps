@@ -70,9 +70,10 @@ class file {
             }
             if (item.type == 'checklist') {
                 div += `<div class="afsOptionList" id="checklistGroup${i}">`;
-                for (let j = 0; j < item.addList.length; j++) {
+                let list = getAddItems(item.addList);
+                for (let j = 0; j < list.length; j++) {
                     div += `<div class="aiCheckGroup">
-                        <div class="aiCheckTitle">${this.addList[j].name.charAt(0).toUpperCase() + this.addList[j].name.substring(1,this.addList[j].name.length)}</div>
+                        <div class="aiCheckTitle">${list[j].name.charAt(0).toUpperCase() + list[j].name.substring(1,list[j].name.length)}</div>
                         <div id="aisCheckBox${i + "a" + j}" class="aiCheckBox"></div>
                     </div>`
                 }
@@ -149,6 +150,7 @@ class file {
                     }
 
                     dir.open();
+                    os.save();
                     this.parent.style.display = "none";
                 }
             }
@@ -189,6 +191,9 @@ class application extends file {
     close = function() {
         $('screen1').style.display = 'block';
         $('application').style.display = 'none';
+    }
+    save = function() {
+        os.save();
     }
 }
 function tern(clause,els) {
@@ -239,6 +244,9 @@ class fileSystem {
         render(this,this.display);
         if (this.pathDisplay) this.pathDisplay.innerHTML = this.path;
         return this.path;
+    }
+    save = function() {
+        //ls.save("kids",this.kids)
     }
     updateCSS = function() {
         this.display.style.background = this.css.background;

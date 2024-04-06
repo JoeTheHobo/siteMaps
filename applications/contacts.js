@@ -90,6 +90,7 @@ class contactFile extends application {
                         input.addEventListener("input",function() {
                             storage[this.i][j] = this.value;
                             Class.storage = storage;
+                            Class.save();
                         })
                         input.placeholder = contactTextList[j] + "..."
                     }
