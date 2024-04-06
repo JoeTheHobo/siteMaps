@@ -154,7 +154,7 @@ body {
     bottom: 0;
     margin: auto;
     width: 80%;
-    height: 60%;
+    height: max-content;
     background: #343434;
     padding: 10px;
     color: white;
@@ -189,6 +189,7 @@ body {
 
 }
 .aiCreate {
+    margin-top: 20px;
     bottom: 10px;
     width: 100%;
     background: linear-gradient(90deg, #FF00D6 0%, #FF0000 100%);
@@ -204,6 +205,9 @@ body {
 .afsOptionList {
     flex-grow: 1;
     margin-top: 20px;
+    height: 300px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .aiCheckGroup {
@@ -224,4 +228,21 @@ body {
     height: 20px;
     border: 2px solid white;
     background-size: 33px 33px;
+}
+
+#application {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    
+}
+#appBody {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
 }

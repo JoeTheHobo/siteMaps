@@ -1,3 +1,9 @@
+
+var fileSize = 1;
+let filePath = "";
+let isDoubleClick = false;
+let forwardPath = [];
+let fileSets = [];
 /*
     Possible Class Types
     autherizedPeoples - Txt (Name, Number, Position)
@@ -5,6 +11,186 @@
     Contacts - (Names, Numbers)
     Images - (images)
 */
+class file {
+    constructor(name,obj) {
+        this.name = name;
+        this.kids = [];
+        this.addList = tern(obj.addList,[]);
+        this.isKillable = obj.isKillable ? obj.isKillable : true;
+        this.createDOM = $('createDiv');
+        this.createARR = tern(obj.createARR,[]);
+
+        
+        this.display = null; //To Be Set From OS;
+        this.pathDisplay = null; //To Be Set From OS;
+        this.path = null; //To Be set From OS:
+        this.goBack = null;//To Be set From OS:
+        this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
+        this.addMenu = null; //To Be Set From OS;
+        this.headers = obj.headers ? obj.headers : [];
+    }
+    pathChange = function(skipPathTest) {
+        let parent = this.parent;
+        let addMenu = this.addMenu;
+        let path = this.path;
+        if (!skipPathTest) if (path !== forwardPath[0]) forwardPath = [];
+        testForwardAndBackDOM();
+        this.goBack.onclick = function() {
+            if (forwardPath[0] !== path)
+                forwardPath.unshift(path);
+            testForwardAndBackDOM();
+            parent.open(true);
+            addMenu.style.display = 'none';
+        }
+    }
+    createScreen = function() {
+        this.createDOM.style.display = "flex";
+        this.createDOM.innerHTML = '';
+        /*
+            createARR Types
+            title - Title Of 
+
+            create - Create Button
+        */
+        let div = ``;
+        for (let i = 0; i < this.createARR[1].length; i++) {
+            let item = this.createARR[1][i];
+            if (item.type == 'title') {
+                div += `
+                    <div class="addTitle">${item.text}</div>
+                `
+            }
+            if (item.type == 'titleInput') {
+                div += `
+                    <div class="folderNameInputGroup">
+                        <div class="aiInputTitle">${item.text}</div>
+                        <input id="${"aiInput" + i}" placeholder="${tern(item.placeholder,"Untitled " + findUntitleds())}" class="aiInput" type="text">
+                    </div>
+                `
+            }
+            if (item.type == 'checklist') {
+                div += `<div class="afsOptionList" id="checklistGroup${i}">`;
+                for (let j = 0; j < item.addList.length; j++) {
+                    div += `<div class="aiCheckGroup">
+                        <div class="aiCheckTitle">${this.addList[j].name.charAt(0).toUpperCase() + this.addList[j].name.substring(1,this.addList[j].name.length)}</div>
+                        <div id="aisCheckBox${i + "a" + j}" class="aiCheckBox"></div>
+                    </div>`
+                }
+                div += '</div>'
+
+            }
+            if (item.type == "create") {
+                div += `
+                    <div id="aiCreate${i}" class="aiCreate">${tern(item.text,"Create!")}</div>
+                `
+            }
+        }
+
+        this.createDOM.innerHTML += div;
+        for (let i = 0; i < this.createARR[1].length; i++) {
+            let item = this.createARR[1][i];
+
+            if (item.type == 'titleInput') {
+                $("aiInput" + i).result = this.createARR[1][i].value;
+            }
+
+            if (item.type == 'checklist') {
+                $("checklistGroup" + i).addList = this.createARR[1][i].addList;
+                for (let j = 0; j < this.createARR[1][i].addList.length; j++) {
+                    $("aisCheckBox" + i + "a" + j).Class = this.createARR[1][i].addList[j];
+                    $("aisCheckBox" + i + "a" + j).addEventListener("click",function() {
+                        if (this.style.background !== "") {
+                            this.style.background = "";
+                        } else {
+                            this.style.background = "url(img/checkbox.png) no-repeat center center";
+                            this.style.backgroundSize = "33px 33px";
+                        }
+                    });
+                }
+            } else {
+                this.createDOM.addList = [];
+            }
+
+            if (item.type == "create") {
+                $("aiCreate" + i).amount = this.createARR[1].length;
+                $("aiCreate" + i).parent = this.createDOM;
+                $("aiCreate" + i).Class = this.createARR[0];
+                $("aiCreate" + i).addList = [];
+                $('aiCreate' + i).onclick = function() {
+                    let name = "Untitled " + findUntitleds();
+
+
+                    for (let j = 0; j < this.amount; j++) {
+                        try {
+                            if ($("aiInput" + j).result == "name") {
+                                name = $("aiInput" + j).value == "" ? $("aiInput" + j).placeholder : $("aiInput" + j).value;
+                            }
+                        } catch {
+
+                        }
+                    }
+                    
+                    let dir = findDirectory(os);
+                    let newItem = new this.Class(name);
+                    dir.add(newItem)
+
+                    for (let i = 0; i < this.amount; i++) {
+                        if ($("checklistGroup" + i)) {
+                            for (let j = 0; j < $("checklistGroup" + i).addList.length; j++) {
+                                if ($("aisCheckBox" + i + 'a' + j).Class) {
+                                    if ($("aisCheckBox" + i + 'a' + j).style.background !== "") {
+                                        let Class = $("aisCheckBox" + i + 'a' + j).Class;
+                                        let a = new Class("Untitled " + (j+1));
+                                        newItem.add(a)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    dir.open();
+                    this.parent.style.display = "none";
+                }
+            }
+        }
+            
+        
+        
+        
+    }
+}
+class application extends file {
+    constructor(name,obj) {
+        super(name,obj);
+        this.storage = null;
+    }
+    application = function(obj) {
+        $('screen1').style.display = 'none';
+        $('appBody').innerHTML = "";
+        $('application').style.display = 'block';
+
+        if (obj.header) {
+            let header = $('appBody').create('div');
+            header.css({
+                width: "100%",
+                height: "90px",
+                background: "#414141",
+            });
+            let back = header.create("img");
+            back.src = "img/back.png";
+            back.css({
+                width: "40px",
+            })
+            back.onclick = this.close;
+        }
+
+        return $('appBody');
+    }
+    close = function() {
+        $('screen1').style.display = 'block';
+        $('application').style.display = 'none';
+    }
+}
 function tern(clause,els) {
     if (clause) return clause
     else return els
@@ -16,13 +202,12 @@ class fileSystem {
         this.display = obj.display;
         this.pathDisplay = obj.pathDisplay;
         this.css = {
-            background: tern(obj.cssBackground,"black"),
             color: tern(obj.cssColor,"white"),
         }
-        this.cssBackground = 
         this.goBack = obj.goBack;
         this.addMenu = obj.addMenu;
-        this.addList = [folder,building,door];
+        this.tags = [0];
+        this.addList = [1];
 
         this.path = name + ":";
     }
@@ -61,23 +246,33 @@ class fileSystem {
 
     }
 }
-class folder {
+class folder extends file {
     constructor(name,obj = {}) {
-        this.name = name;
-        this.kids = [];
-        this.isKillable = obj.isKillable ? obj.isKillable : true;
-        this.iconSRC = "img/fullFolder.png"
+        obj.createARR = [folder,[
+            {
+                type: "title",
+                text: "Add Folder",
+            },
+            {
+                type: "titleInput",
+                text: "Folder Name:",
+                value: "name",
+            },
+            {
+                type: "checklist",
+                addList: [1],
 
-        this.display = null; //To Be Set From OS;
-        this.pathDisplay = null; //To Be Set From OS;
-        this.path = null; //To Be set From OS:
-        this.goBack = null;//To Be set From OS:
-        this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
-        this.addMenu = null; //To Be Set From OS;
-        this.addList = obj.addList ? obj.addList : [folder,building,door];
-        this.headers = obj.headers ? obj.headers : [];
-
-
+            },
+            {
+                type: "create",
+            }
+        ]];
+        super(name,obj);
+        this.tags = [1];
+        this.iconSRC = "img/fullFolder.png";
+        this.addList = obj.addList ? obj.addList : [1];
+        this.untiteldName = "Folder";
+        this.creation = folder;
     }
     add = function(toAdd) {
         toAdd.display = this.display;
@@ -90,76 +285,16 @@ class folder {
         this.kids.push(toAdd);
     }
     open = function(skipPathTest = false) {
-        
-        let parent = this.parent;
-        let addMenu = this.addMenu;
-        let path = this.path;
-        if (!skipPathTest) if (path !== forwardPath[0]) forwardPath = [];
-        testForwardAndBackDOM();
-        this.goBack.onclick = function() {
-            if (forwardPath[0] !== path)
-                forwardPath.unshift(path);
-            testForwardAndBackDOM();
-            parent.open(true);
-            addMenu.style.display = 'none';
-        }
-
+        this.pathChange(skipPathTest);
         
         buildAddMenu(this.addMenu,this.addList,this);
-        
 
         render(this,this.display);
         if (this.pathDisplay) this.pathDisplay.innerHTML = getPathName(this.path,this.pathDisplay);
         return this.path;
     }
-    createScreen = function() {
-        
-        $('addFolderScreen').style.display = "flex";
-        $('afsInput').value = "";
-        $('afsInput').placeholder = "Untitled " + findUntitleds();
-        $('afsCreate').addList = this.addList;
-        $('afsCreate').onclick = function() {
-            let name = $('afsInput').value;
-            if (name == "") name = $('afsInput').placeholder;
-
-            let dir = findDirectory(os);
-            let newFolder = new folder(name);
-            dir.add(newFolder)
-            
-
-            for (let i = 0; i < this.addList.length; i++) {
-                if ($("afsCheckBox" + i).style.background !== "") {
-                    let a = new this.addList[i]("Untitled " + (i+1));
-                    newFolder.add(a)
-                }
-            }
-
-            dir.open();
-            $('addFolderScreen').style.display = "none";
-        }
-        
-        let div = '';
-        for (let i = 0; i < this.addList.length; i++) {
-            div += `<div class="aiCheckGroup">
-                <div class="aiCheckTitle">${this.addList[i].name.charAt(0).toUpperCase() + this.addList[i].name.substring(1,this.addList[i].name.length)}</div>
-                <div id="afsCheckBox${i}" class="aiCheckBox"></div>
-            </div>`
-        }
-        $('.afsOptionList').innerHTML = div;
-
-        for (let i = 0; i < this.addList.length; i++) {
-            $("afsCheckBox" + i).Class = this.addList[i];
-            $("afsCheckBox" + i).onclick = function() {
-                if (this.style.background !== "") {
-                    this.style.background = "";
-                } else {
-                    this.style.background = "url(img/checkbox.png) no-repeat center center";
-                    this.style.backgroundSize = "33px 33px";
-                }
-            }
-        }
-    }
 }
+fileSets.push(new folder())
 function testNameInDir(dir,name) {
     for (let i = 0; i < dir.kids.length; i++) {
         if (dir.kids[i].name == name) return false;
@@ -175,89 +310,20 @@ function findUntitleds() {
     }
     return count;
 }
-class building {
-    constructor(name,obj = {}) {
-        this.template = obj.template;
-        this.name = name;
-        this.address = obj.address;
-        this.doors = [];
-        this.iconSRC = "img/church.png"
-        this.kids = [];
-
-        this.display = null; //To Be Set From OS;
-        this.path = null; //To Be set From OS:
-        this.pathDisplay = null; //To Be Set From OS;
-        this.goBack = null;//To Be set From OS:
-        this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
-        this.addMenu = null; //To Be Set From OS;
-        this.addList = obj.addList ? obj.addList : [folder,door];
-    }
-    add = function(toAdd) {
-        toAdd.display = this.display;
-        toAdd.path = this.path + toAdd.name + '/';
-        toAdd.pathDisplay = this.pathDisplay;
-        toAdd.goBack = this.goBack;
-        toAdd.parent = this;
-        toAdd.addMenu = this.addMenu;
-
-        this.kids.push(toAdd);
-    }
-    open = function(skipPathTest) {
-        testForwardAndBackDOM();
-        
-        let parent = this.parent;
-        let addMenu = this.addMenu;
-        let path = this.path;
-        
-        if (!skipPathTest) if (path !== forwardPath[0]) forwardPath = [];
-        testForwardAndBackDOM();
-        this.goBack.onclick = function() {
-            if (forwardPath[0] !== path)
-                forwardPath.unshift(path);
-            testForwardAndBackDOM();
-            console.log(forwardPath)
-            parent.open();
-            addMenu.style.display = 'none';
+function getAddItems(arr) {
+    let newSet = [];
+    for (let i = 0; i < fileSets.length; i++) {
+        currentSet: for (let j = 0; j < fileSets[i].tags.length; j++) {
+            if (arr.includes(fileSets[i].tags[j])) {
+                newSet.push(fileSets[i].creation)
+                break currentSet;
+            }
         }
-
-        buildAddMenu(this.addMenu,this.addList,this);
-        
-
-        
-        render(this,this.display);
-        if (this.pathDisplay) this.pathDisplay.innerHTML = this.path;
-        return this.path;
     }
+    return newSet;
 }
-class door {
-    constructor(name,obj) {
-        this.iconSRC = "img/siteMap.png"
-
-        this.name = name;
-        this.floor = obj.floor;
-        this.number = obj.number;
-        this.quantity = obj.quantity;
-        
-        this.location = obj.location;
-        this.type = obj.type;
-        this.brand = obj.brand;
-        this.remarks = obj.remarks;
-        this.discription = obj.discription;
-        this.keyedTo = obj.keyedTo;
-        this.finish = obj.finish;
-
-        this.display = null; //To Be Set From OS;
-        this.path = null; //To Be set From OS:
-        this.pathDisplay = null; //To Be Set From OS;
-        this.goBack = null;//To Be set From OS:
-        this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
-        this.addMenu = null; //To Be Set From OS;
-    }
-    open = function() {
-        
-    }
-}
-function buildAddMenu(addMenuDom,addList,parent) {
+function buildAddMenu(addMenuDom,addList) {
+    addList = getAddItems(addList);
     addMenuDom.innerHTML = "<div class='addItemText'>Add Item</div>";
     for (let i = 0; i < addList.length; i++) {
         let div = addMenuDom.create("div");
@@ -287,7 +353,6 @@ function render(file,dom) {
         headers += "</div>";
         dom.innerHTML += headers;
     }
-
     if (file.templateFolder) {
         dom.innerHTML += createFileDom(file.templateFolderIcon,file.templateFolderTitle,folderSize,folderImageSize,ids);
         ids++;
@@ -499,21 +564,4 @@ function goInDirectory(dir,path) {
     dir.open();
 }
 
-var fileSize = 1;
-let filePath = "";
-let isDoubleClick = false;
-let forwardPath = [];
 testForwardAndBackDOM(false);
-
-let os = new fileSystem("J",{
-    display: $("fileSystem"),
-    pathDisplay: $("path"),
-    goBack: $('goBack'),
-    addMenu: $(".addMenu"),
-});
-
-os.add(new folder("Untitled 1",{
-    headers: ["Santaquin City Police Department","346 N 100 E, Santaquin"],
-}))
-
-os.open();
