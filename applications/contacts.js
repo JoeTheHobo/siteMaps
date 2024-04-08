@@ -92,6 +92,7 @@ class contactFile extends application {
                             Class.storage = storage;
                             Class.save();
                         })
+                        input.type = 'number'
                         input.placeholder = contactTextList[j] + "..."
                     }
                 }

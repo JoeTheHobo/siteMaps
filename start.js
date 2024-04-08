@@ -5,6 +5,8 @@ let os = new fileSystem("J",{
     addMenu: $(".addMenu"),
 });
 
-os.kids = ls.get("kids",[])
+if (localStorage.getItem("kids") !== null) {
+    os = os.load(localStorage.getItem("kids"));
+}
 
 os.open();

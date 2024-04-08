@@ -50,6 +50,17 @@ window.ls = {
         localStorage.clear();
     }
 }
+function isClass(obj) {
+    const isCtorClass = obj.constructor
+        && obj.constructor.toString().substring(0, 5) === 'class'
+    if(obj.prototype === undefined) {
+      return isCtorClass
+    }
+    const isPrototypeCtorClass = obj.prototype.constructor 
+      && obj.prototype.constructor.toString
+      && obj.prototype.constructor.toString().substring(0, 5) === 'class'
+    return isCtorClass || isPrototypeCtorClass
+  }
 window.ss = {
     save: function(name,save,open = ":!>@",close = '@>!:',number = 'n!<>', string = 's!<>',stringEnd = '<>!s',object = 'o!<>',objectEnd = '<>!o') {
         if (Array.isArray(save)) {

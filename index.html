@@ -15,9 +15,12 @@
     <div id='screen1' class="screen">
         <div id="topBar">
             <div id="path"></div>
-            <div class="directionGroup">
-                <img class="directionButton" id="goBack" src="img/back.png">
-                <img class="directionButton" id="goForward" src="img/back.png">
+            <div class="row2">
+                <div class="directionGroup">
+                    <img class="directionButton" id="goBack" src="img/back.png">
+                    <img class="directionButton" id="goForward" src="img/back.png">
+                </div>
+                <div id="addItemID" class="addItem">+</div>
             </div>
         </div>
         <div id="fileSystem">
@@ -30,12 +33,25 @@
         </div>
     </div>
 
-    <div class="addMenu">
+    <div id='hideME' class="addMenu">
+    </div>
+
+    <div class="fileSettings">
+        <div class="row">
+            <img src="img/copy.png" id="copyIcon" onclick="classCopy()" class="fileEdit" alt="">
+            <img src="img/paste.png"  onclick="classPaste()" id="pasteIcon" class="fileEdit" alt="">
+            <img src="img/cut.png" id="cutIcon" class="fileEdit" alt="">
+            <img id="renameIcon" onclick="classRename()" src="img/rename.png" class="fileEdit" alt="">
+            <img id="deleteIcon" onclick="classDelete()"  src="img/delete.png" class="fileEdit" alt="">
+            <img src="img/download.png" id="downloadIcon" class="fileEdit" alt="">
+        </div>
     </div>
 
     <div class='addItemScreen' id="createDiv">
 
     </div>
+
+    <div id="pupup"></div>
 
     <script src='libraries/library_simple_v14.js'></script>
     <script src="libraries/localStorage.js"></script>

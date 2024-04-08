@@ -23,8 +23,39 @@ body {
     box-shadow: 0px 4px 4px 0px #00000040;
 
 }
+.row2 {
+    display: flex;
+}
 .directionButton {
     width: 27px;
+}
+.row {
+    display: flex;
+}
+.fileEdit {
+    
+    background: linear-gradient(90deg, #00ff9d 0%, #00b7ff 100%);
+    margin-top: 10px;
+    border-radius: 5px;
+    padding: 5px;
+    box-shadow: 0px 4px 4px 0px #00000040;
+    width: 30px;
+    height: 30px;
+    margin-left: 10px;
+}
+.addItem {
+    background: linear-gradient(90deg, #FF0000 0%, #FA00FF 100%);
+    margin-top: 10px;
+    border-radius: 5px;
+    padding-top:2px;
+    box-shadow: 0px 4px 4px 0px #00000040;
+    color: white;
+    font-size: 35px;
+    width: 30px;
+    height: 30px;
+    line-height: 25px;
+    margin-left: 20px;
+    text-align: center;
 }
 .directionGroup {
     background: linear-gradient(90deg, #FF0000 0%, #FA00FF 100%);
@@ -188,6 +219,21 @@ body {
     background: #606060;
 
 }
+.aiDelete {
+    display: inline-block;
+    margin-top: 20px;
+    bottom: 10px;
+    width: 45%;
+    margin-left: 5px;
+    margin-right: 5px;
+    background: linear-gradient(90deg, #FF00D6 0%, #FF0000 100%);
+    text-align: center;
+    font-size: 15px;
+    height: 35px;
+    line-height: 35px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 4px 0px #00000040;
+}
 .aiCreate {
     margin-top: 20px;
     bottom: 10px;
@@ -246,3 +292,77 @@ body {
     width: 100%;
     height: 100%;
 }
+.fileSettings {
+    display: none;
+    background: #393939;
+    bottom: 0px;
+    overflow: hidden;
+    max-height: 0px;
+    height: 70px;
+    position: absolute;
+    z-index: 100;
+    width: 100%;
+}
+.fileSettings2 {
+    display: block;
+    animation-name: slide;
+    animation-duration: .15s;
+}
+.fileSettings3 {
+    display: block;
+    animation-name: slideOut;
+    animation-duration: .15s;
+}
+
+@keyframes slide {
+    from {  max-height: 0px;}
+    to { max-height: 70px;}
+       
+   }
+   
+@keyframes slideOut {
+    from {  max-height: 70px;}
+    to { max-height: 0px;}
+       
+   }
+
+.shake {
+    filter: sepia(100%) hue-rotate(190deg) saturate(500%);
+    /* Start the shake animation and make the animation last for 0.5 seconds */
+    animation: shake 2s;
+
+    /* When the animation is finished, start again */
+    animation-iteration-count: infinite;
+}
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+  }
+
+
+  #pupup {
+    display: none;
+    position: absolute;
+    bottom: 100px;
+    width: 90%;
+    background: #41414160;
+    border-radius: 5px;
+    left: 0;
+    right: 0;
+    color: rgba(255, 255, 255, 0.87);
+    line-height: 40px;
+    text-align: center;
+    height: 40px;
+    margin: auto;
+
+    transition: opacity .2s;
+  }

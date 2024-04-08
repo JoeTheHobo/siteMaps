@@ -1,7 +1,7 @@
 
 var fileSize = 1;
 let filePath = "";
-let isDoubleClick = false;
+let isDoubleClick = true;
 let forwardPath = [];
 let fileSets = [];
 /*
@@ -21,29 +21,116 @@ class file {
         this.createARR = tern(obj.createARR,[]);
 
         
-        this.display = null; //To Be Set From OS;
-        this.pathDisplay = null; //To Be Set From OS;
+        this.display = $("fileSystem"); //To Be Set From OS;
+        this.pathDisplay = $('path'); //To Be Set From OS;
         this.path = null; //To Be set From OS:
-        this.goBack = null;//To Be set From OS:
+        this.goBack = $("goBack");//To Be set From OS:
         this.parent = obj.parent ? obj.parent : null; //To Be Set From OS;
-        this.addMenu = null; //To Be Set From OS;
+        this.addMenu = $(".addMenu"); //To Be Set From OS;
         this.headers = obj.headers ? obj.headers : [];
+        this.className = tern(obj.className,null); //To Be Set In Creation Screen
     }
-    pathChange = function(skipPathTest) {
-        let parent = this.parent;
-        let addMenu = this.addMenu;
-        let path = this.path;
-        if (!skipPathTest) if (path !== forwardPath[0]) forwardPath = [];
-        testForwardAndBackDOM();
-        this.goBack.onclick = function() {
-            if (forwardPath[0] !== path)
-                forwardPath.unshift(path);
-            testForwardAndBackDOM();
-            parent.open(true);
-            addMenu.style.display = 'none';
+    changeName = function(name) {
+        this.name = name;
+        let dirPath = findDirectory(os).path;
+        this.path = dirPath + name + "/";
+
+        let kids = [...this.kids];
+        this.kids = [];
+
+        setKids(this,kids);
+
+        this.open();
+        os.save();
+    }
+    pathChange = function(reloading) {
+        let Class = this;
+        $("goBack").onclick = function() {
+            Class.pathReverse();
         }
+
+        if (reloading) return;
+
+        let path = this.path;
+        if (path == forwardPath[0]) forwardPath.shift();
+        else forwardPath = [];
+
+        testForwardAndBackDOM();
     }
-    createScreen = function() {
+    pathReverse = function() {
+        let parent = this.parent;
+        let addMenu = $('.addMenu');
+        let path = this.path;
+
+        forwardPath.unshift(path);
+        testForwardAndBackDOM();
+        parent.open(true);
+        addMenu.style.display = 'none';
+    
+    }
+    
+    deleteItem(name) {
+        
+        for (let i = 0; i < this.kids.length; i++) {
+            if (this.kids[i].name == name) {
+                this.kids.splice(i,1);
+            }
+        }
+        
+        this.open(true);
+        os.save();
+    }
+    delete() {
+        this.createScreen(
+            [false,[
+                {
+                    type: "title",
+                    text: "Delete Selected Files?"
+                },
+                {
+                    type: "doubleDelete",
+                    text1: "No!",
+                    text2: "Delete!"
+                }
+            ]]
+        )
+    }
+    alreadyExists(Class,alreadyExists,fakeName) {
+        this.createScreen(
+            [false,[
+                {
+                    type: "title",
+                    text: "File " + fakeName + " Already Exists",
+                },
+                {
+                    type: "replaceRename",
+                    class: Class,
+                    alreadyExists: alreadyExists,
+                    fakeName: fakeName,
+                }
+            ]
+            ]
+        );
+    }
+    rename(Class,alreadyExists) {
+        console.log(Class,alreadyExists)
+        this.createScreen(
+            [false,[
+                {
+                    type: "titleInput",
+                    text: "New Name:",
+                    value: "name",
+                },
+                {
+                    type: "rename",
+                    class: Class,
+                    alreadyExists: alreadyExists,
+                }
+            ]
+            ]
+        );
+    }
+    createScreen = function(arr) {
         this.createDOM.style.display = "flex";
         this.createDOM.innerHTML = '';
         /*
@@ -52,9 +139,12 @@ class file {
 
             create - Create Button
         */
+
+        let useARR = arr ? arr : this.createARR;
+
         let div = ``;
-        for (let i = 0; i < this.createARR[1].length; i++) {
-            let item = this.createARR[1][i];
+        for (let i = 0; i < useARR[1].length; i++) {
+            let item = useARR[1][i];
             if (item.type == 'title') {
                 div += `
                     <div class="addTitle">${item.text}</div>
@@ -80,25 +170,48 @@ class file {
                 div += '</div>'
 
             }
+            
+            
+            if (item.type == "doubleDelete") {
+                div += `
+                <div>
+                    <div id="aiDeleteNo${i}" class="aiDelete">${tern(item.text1,"No!")}</div>
+                    <div id="aiDelete${i}" class="aiDelete">${tern(item.text2,"Delete!")}</div>
+                </div>
+                `
+            }
+            if (item.type == "replaceRename") {
+                div += `
+                <div>
+                    <div id="aiReplace2${i}" class="aiDelete">${tern(item.text1,"Replace!")}</div>
+                    <div id="aiRename2${i}" class="aiDelete">${tern(item.text2,"Rename!")}</div>
+                </div>
+                `
+            }
             if (item.type == "create") {
                 div += `
                     <div id="aiCreate${i}" class="aiCreate">${tern(item.text,"Create!")}</div>
                 `
             }
+            if (item.type == "rename") {
+                div += `
+                    <div id="aiRename${i}" class="aiCreate">${tern(item.text,"Rename!")}</div>
+                `
+            }
         }
 
         this.createDOM.innerHTML += div;
-        for (let i = 0; i < this.createARR[1].length; i++) {
-            let item = this.createARR[1][i];
+        for (let i = 0; i < useARR[1].length; i++) {
+            let item = useARR[1][i];
 
             if (item.type == 'titleInput') {
-                $("aiInput" + i).result = this.createARR[1][i].value;
+                $("aiInput" + i).result = useARR[1][i].value;
             }
 
             if (item.type == 'checklist') {
-                $("checklistGroup" + i).addList = this.createARR[1][i].addList;
-                for (let j = 0; j < this.createARR[1][i].addList.length; j++) {
-                    $("aisCheckBox" + i + "a" + j).Class = this.createARR[1][i].addList[j];
+                $("checklistGroup" + i).addList = useARR[1][i].addList;
+                for (let j = 0; j < useARR[1][i].addList.length; j++) {
+                    $("aisCheckBox" + i + "a" + j).Class = useARR[1][i].addList[j];
                     $("aisCheckBox" + i + "a" + j).addEventListener("click",function() {
                         if (this.style.background !== "") {
                             this.style.background = "";
@@ -112,10 +225,113 @@ class file {
                 this.createDOM.addList = [];
             }
 
+            if (item.type == 'doubleDelete') {
+                $('aiDeleteNo' + i).onclick = function() {
+
+                    $('.addItemScreen').style.display = "none";
+                }
+                $('aiDelete' + i).onclick = function() {
+                    
+                    let dir = findDirectory(os);
+                    let count = selectedElements.length;
+                    for (let j = 0; j < count; j++) {
+                        dir.deleteItem(selectedElements[j].name);
+                    }
+                    selectedElements = [];
+                    
+                    $('.addItemScreen').style.display = "none";
+
+                }
+            }
+            if (item.type == 'replaceRename') {
+                $('aiRename2' + i).class = item.class;
+                $('aiRename2' + i).alreadyExists = item.alreadyExists;
+                item.class.skip = true;
+                $('aiReplace2' + i).fakeName = item.fakeName;
+                $('aiReplace2' + i).class = item.class;
+                $('aiReplace2' + i).alreadyExists = item.alreadyExists;
+                $('aiReplace2' + i).onclick = function() {
+                    let dir = findDirectory(os);
+                    for (let i = 0; i < dir.kids.length; i++) {
+                        if (dir.kids[i].name == this.fakeName && !dir.kids[i].skip) {
+                            dir.kids.splice(i,1);
+                        }
+                    }
+                    this.class.skip = false;
+
+                    
+                    if (this.class && !this.alreadyExists) {
+                        dir.add(this.class)
+                    } else {
+                        this.class.changeName(this.fakeName);
+                    }
+
+
+                    dir.open(true);
+                    os.save();
+                    $('.addItemScreen').style.display = "none";
+
+                }
+                $('aiRename2' + i).onclick = function() {
+                    this.class.rename(this.class,this.alreadyExists);
+
+                }
+            }
+
+            if (item.type == 'rename') {
+                
+                $("aiRename" + i).amount = useARR[1].length;
+                $("aiRename" + i).class = item.class;
+                $("aiRename" + i).alreadyExists = item.alreadyExists;
+                $('aiRename' + i).onclick = function() {
+                    let name = "Untitled " + findUntitleds();
+
+
+                    for (let j = 0; j < this.amount; j++) {
+                        try {
+                            if ($("aiInput" + j).result == "name") {
+                                name = $("aiInput" + j).value == "" ? $("aiInput" + j).placeholder : $("aiInput" + j).value;
+                            }
+                        } catch {
+
+                        }
+                    }
+
+                    
+                    let isNameAllowed = testNameInDir(name);
+
+                    if (!isNameAllowed) {
+                        if (this.class) {
+                            this.class.alreadyExists(this.class,this.alreadyExists,name);
+                        } else {
+                            selectedElements[0].alreadyExists(selectedElements[0],true,name);
+                        }
+                    } else {
+                        console.log("hey",this.class,this.alreadyExists)
+                        let dir = findDirectory(os);
+                        if (this.class && !this.alreadyExists ) {
+                            this.class.name = name;
+                            
+                            console.log(this.class.name)
+                            
+                            dir.add(this.class)
+                        }
+                        else {
+                            selectedElements[0].changeName(name);
+                            selectedElements[0].name = name;
+                        }
+    
+                        dir.open(true);
+                        os.save();
+                        $('.addItemScreen').style.display = "none";
+                    }
+                    
+                }
+            }
             if (item.type == "create") {
-                $("aiCreate" + i).amount = this.createARR[1].length;
+                $("aiCreate" + i).amount = useARR[1].length;
                 $("aiCreate" + i).parent = this.createDOM;
-                $("aiCreate" + i).Class = this.createARR[0];
+                $("aiCreate" + i).Class = useARR[0];
                 $("aiCreate" + i).addList = [];
                 $('aiCreate' + i).onclick = function() {
                     let name = "Untitled " + findUntitleds();
@@ -130,11 +346,13 @@ class file {
 
                         }
                     }
+
+                    let isNameAllowed = testNameInDir(name)
                     
                     let dir = findDirectory(os);
                     let newItem = new this.Class(name);
-                    dir.add(newItem)
-
+                    newItem.className = newItem.constructor.name
+                    ;
                     for (let i = 0; i < this.amount; i++) {
                         if ($("checklistGroup" + i)) {
                             for (let j = 0; j < $("checklistGroup" + i).addList.length; j++) {
@@ -142,6 +360,7 @@ class file {
                                     if ($("aisCheckBox" + i + 'a' + j).style.background !== "") {
                                         let Class = $("aisCheckBox" + i + 'a' + j).Class;
                                         let a = new Class("Untitled " + (j+1));
+                                        a.className = a.constructor.name;
                                         newItem.add(a)
                                     }
                                 }
@@ -149,9 +368,30 @@ class file {
                         }
                     }
 
-                    dir.open();
-                    os.save();
-                    this.parent.style.display = "none";
+                    
+                    if (!isNameAllowed) {
+                        newItem.createScreen(
+                            [false,[
+                                {
+                                    type: "title",
+                                    text: "File Already Exists",
+                                },
+                                {
+                                    type: "replaceRename",
+                                    class: newItem,
+                                }
+                            ]
+                            ]
+                        );
+                    } else {
+
+                        dir.add(newItem)
+
+                        dir.open(true);
+                        os.save();
+                        this.parent.style.display = "none";
+                    }
+
                 }
             }
         }
@@ -164,9 +404,12 @@ class file {
 class application extends file {
     constructor(name,obj) {
         super(name,obj);
-        this.storage = null;
+        this.storage = tern(obj.storage,null);
     }
     application = function(obj) {
+        this.pathChange();
+        fileSettingsClose(false);
+
         $('screen1').style.display = 'none';
         $('appBody').innerHTML = "";
         $('application').style.display = 'block';
@@ -191,6 +434,7 @@ class application extends file {
     close = function() {
         $('screen1').style.display = 'block';
         $('application').style.display = 'none';
+        //this.pathReverse();
     }
     save = function() {
         os.save();
@@ -200,31 +444,40 @@ function tern(clause,els) {
     if (clause) return clause
     else return els
 };
-class fileSystem {
+class fileSystem extends file {
     constructor(name,obj={}) {
-
-        this.kids = [];
-        this.display = obj.display;
-        this.pathDisplay = obj.pathDisplay;
+        super(name,obj);
         this.css = {
             color: tern(obj.cssColor,"white"),
         }
-        this.goBack = obj.goBack;
-        this.addMenu = obj.addMenu;
         this.tags = [0];
         this.addList = [1];
 
         this.path = name + ":";
     }
-    add = function(toAdd) {
+    add = function(toAdd,start,alreadyExists = false) {
         toAdd.display = this.display;
         toAdd.pathDisplay = this.pathDisplay;
         toAdd.path = this.path + toAdd.name + '/';
         toAdd.goBack = this.goBack;
         toAdd.addMenu = this.addMenu;
         toAdd.parent = this;
-
-        this.kids.push(toAdd);
+        
+        if (!start) {
+            console.log(testNameInDir(toAdd.name));
+            let isNameAllowed = testNameInDir(toAdd.name);
+            console.log(toAdd.name,isNameAllowed)
+            if (!isNameAllowed) {
+                console.log("here")
+                toAdd.alreadyExists(toAdd,isNameAllowed,toAdd.name);
+            } else {
+                console.log('ey')
+                this.kids.push(toAdd);
+            }
+        } else {
+            this.kids.push(toAdd);
+        }
+        
     }
     open = function() {
         this.updateCSS();
@@ -242,16 +495,73 @@ class fileSystem {
         
 
         render(this,this.display);
-        if (this.pathDisplay) this.pathDisplay.innerHTML = this.path;
+        if (this.pathDisplay) {
+            this.pathDisplay.innerHTML = this.path;
+            this.pathDisplay.realPath = this.path;
+        }
+        fileSettingsClose(false);
         return this.path;
     }
     save = function() {
-        //ls.save("kids",this.kids)
+        removeParents(this);
+        localStorage.setItem('kids',JSON.stringify(this));
+        addParents(this);
+    }
+    load = function(obj) {
+        obj = JSON.parse(obj);
+
+        let kids = [...obj.kids];
+        obj.kids = [];
+        let fs = new fileSystem("J",obj);
+
+        setKids(fs,kids,true);
+        return fs;
+
     }
     updateCSS = function() {
         this.display.style.background = this.css.background;
         this.display.style.color = this.css.color;
 
+    }
+    
+    deleteItem(name) {
+        
+        for (let i = 0; i < this.kids.length; i++) {
+            if (this.kids[i].name == name) {
+                this.kids.splice(i,1);
+            }
+        }
+        
+        this.open(true);
+        os.save();
+    }
+}
+function setKids(dir,kids,start) {
+    for (let i = 0; i < kids.length; i++) {
+        let newKids = [...kids[i].kids];
+        kids[i].kids = [];
+        let Class = eval("new " + kids[i].className + "(kids[i].name,kids[i])");
+        dir.add(Class,start);
+        setKids(Class,newKids,start)
+    }
+}
+document.addEventListener("click",function(e) {
+    if (e.target.parentNode) {
+        if(e.target.id!="hideME" && e.target.id != "addItemID" && e.target.parentNode.id !== 'hideME') { 
+            document.getElementById("hideME").style.display="none";
+        }
+    }
+})
+function addParents(Class) {
+    for (let i = 0; i < Class.kids.length; i++) {
+        Class.kids[i].parent = Class;
+        addParents(Class.kids[i])
+    }
+}
+function removeParents(Class) {
+    for (let i = 0; i < Class.kids.length; i++) {
+        Class.kids[i].parent = false;
+        removeParents(Class.kids[i])
     }
 }
 class folder extends file {
@@ -282,7 +592,7 @@ class folder extends file {
         this.untiteldName = "Folder";
         this.creation = folder;
     }
-    add = function(toAdd) {
+    add = function(toAdd,start) {
         toAdd.display = this.display;
         toAdd.path = this.path + toAdd.name + '/';
         toAdd.pathDisplay = this.pathDisplay;
@@ -290,27 +600,38 @@ class folder extends file {
         toAdd.parent = this;
         toAdd.addMenu = this.addMenu;
 
-        this.kids.push(toAdd);
+
+        if (start) {
+            this.kids.push(toAdd);
+        } else {
+            let isNameAllowed = testNameInDir(toAdd.name);
+
+            if (!isNameAllowed) {
+                this.alreadyExists(this,false,toAdd.name);
+            } else {
+                this.kids.push(toAdd);
+            }
+        }
+
+
+
     }
-    open = function(skipPathTest = false) {
-        this.pathChange(skipPathTest);
+    open = function(reloading) {
+        
+        this.pathChange(reloading);
         
         buildAddMenu(this.addMenu,this.addList,this);
 
         render(this,this.display);
-        if (this.pathDisplay) this.pathDisplay.innerHTML = getPathName(this.path,this.pathDisplay);
+        this.pathDisplay.innerHTML = getPathName(this.path,this.pathDisplay);
+        this.pathDisplay.realPath = this.path;
+        fileSettingsClose(false);
         return this.path;
     }
 }
 fileSets.push(new folder())
-function testNameInDir(dir,name) {
-    for (let i = 0; i < dir.kids.length; i++) {
-        if (dir.kids[i].name == name) return false;
-    }
-    return true;
-}
 function findUntitleds() {
-    let path = $('path').innerHTML;
+    let path = $('path').realPath;
     let dir = findDirectory(os,path);
     let count = 1;
     for (let i = 0; i < dir.kids.length; i++) {
@@ -332,9 +653,9 @@ function getAddItems(arr) {
 }
 function buildAddMenu(addMenuDom,addList) {
     addList = getAddItems(addList);
-    addMenuDom.innerHTML = "<div class='addItemText'>Add Item</div>";
+    $('.addMenu').innerHTML = "<div class='addItemText'>Add Item</div>";
     for (let i = 0; i < addList.length; i++) {
-        let div = addMenuDom.create("div");
+        let div = $('.addMenu').create("div");
         div.className = "option";
         div.innerHTML = addList[i].name.charAt(0).toUpperCase() + addList[i].name.substring(1,addList[i].name.length);
         div.Class = addList[i];
@@ -347,8 +668,17 @@ function buildAddMenu(addMenuDom,addList) {
     }
 }
 function render(file,dom) {
+    dom = $('fileSystem');
     let folderSize = ((window.innerWidth-140)/4) * fileSize;
     let folderImageSize = (((window.innerWidth-140)/4)*1) * fileSize;
+
+    if (folderSize < 0) {
+        folderSize = 55;
+        setTimeout(function() {
+            os.open();
+        },100)
+    }
+
     let ids = 0;
 
     dom.innerHTML = '';
@@ -361,27 +691,70 @@ function render(file,dom) {
         headers += "</div>";
         dom.innerHTML += headers;
     }
-    if (file.templateFolder) {
-        dom.innerHTML += createFileDom(file.templateFolderIcon,file.templateFolderTitle,folderSize,folderImageSize,ids);
-        ids++;
-        
-    }
+
     for (let i = 0; i < file.kids.length; i++) {
         dom.innerHTML += createFileDom(file.kids[i].iconSRC,file.kids[i].name,folderSize,folderImageSize,ids);
         ids++;
-        
     }
-    dom.innerHTML += getDOMAddButton();
     
-    $('addButton').onclick = function() {
-        addMenu(this);
-    }
     for (let i = 0; i < ids; i++) {
-        $('folderIMG' + i).file = file.kids[i];
+        let img = $('folderIMG' + i);
+        img.file = file.kids[i];
+
+        img.css({
+            maxWidth: folderImageSize + "px",
+        })
+
+        img.onload = function() {
+            var width = img.width;
+            var height = img.height;
+            if (width > height) img.style.width = folderImageSize + 'px';
+            else img.style.height = folderImageSize + 'px';
+        }
     }
 }
-var mylatesttap;
+
+function testNameInDir(name) {
+    let dir = findDirectory(os);
+    for (let i = 0; i < dir.kids.length; i++) {
+        if (dir.kids[i].name == name) return false;
+    }
+    return true;
+}
+$('.addItem').onclick = function() {
+    addMenu(this);
+}
+
+$('fileSystem').addEventListener("click",function(e) {
+    if (e.target.classList.contains("folderImage")) return;
+
+    if (selectedElements.length > 0) {
+        selectedElements.length = [];
+        let dir = findDirectory(os);
+        for (let i = 0; i < dir.kids.length; i++) {
+            if ($('folderIMG' + i).classList.contains("shake")) {
+                $('folderIMG' + i).classList.remove("shake");
+            }
+        }
+        
+        toggleFileSettings(false,false);
+    } else {
+        toggleFileSettings();
+    }
+    
+    $('renameIcon').style.display = 'none';
+    $('copyIcon').style.display = 'none';
+    $('deleteIcon').style.display = 'none';
+    $('downloadIcon').style.display = 'none';
+    if (copiedElements < 1) $('pasteIcon').style.display = 'none';
+    else $('pasteIcon').style.display = 'block';
+    $('cutIcon').style.display = 'none';
+})
+var mylatesttap = new Date().getTime();
 var oldEle;
+var doubleTapped = false;
+let selectedElements = [];
+let copiedElements = [];
 function doubletap(element) {
 
     if (!isDoubleClick) {
@@ -389,24 +762,119 @@ function doubletap(element) {
         return;
     }
 
-   var now = new Date().getTime();
-   var timesince = now - mylatesttap;
-   if((timesince < 300) && (timesince > 0)){
-    if (element == oldEle)
-        openFolder(element);
+    var now = new Date().getTime();
+    var timesince = now - mylatesttap;
+    if((timesince < 300) && (timesince > 0)) {
+        doubleTapped = true;
+        if (element == oldEle) 
+            openFolder(element);
+        
 
-   }else{
-            // too much time to be a doubletap
-         }
+    } else if(mylatesttap) {
+        setTimeout(function() {
+            if (!doubleTapped) {
+                if (element.classList.contains("shake")) {
+                    element.classList.remove("shake");
+                    let shaking = 0;
+                    selectedElements = [];
+                    for (let i = 0; i < element.file.parent.kids.length; i++) {
+                        if ($('folderIMG' + i).classList.contains("shake")) {
+                            shaking++;
+                            selectedElements.push($('folderIMG' + i).file);
+                        }
+                    }
 
+                    if (shaking == 0) toggleFileSettings(false,false);
+                    
+                    if (shaking > 1) $('renameIcon').style.display = 'none';
+                    else $('renameIcon').style.display = 'block';
+                    if (copiedElements < 1) $('pasteIcon').style.display = 'none';
+                    else $('pasteIcon').style.display = 'block';
+                    if (shaking > 0) $('cutIcon').style.display = 'block';
+                    else $('cutIcon').style.display = "none";
+                    $('deleteIcon').style.display = 'block';
+                    $('downloadIcon').style.display = 'block';
+                    $('copyIcon').style.display = 'block';
+                } else {
+                    element.classList.add("shake");
+                    
+                    let shaking = 0;
+                    selectedElements = [];
+                    for (let i = 0; i < element.file.parent.kids.length; i++) {
+                        if ($('folderIMG' + i).classList.contains("shake")) {
+                            shaking++;
+                            selectedElements.push($('folderIMG' + i).file);
+                        }
+                    }
+                    if (shaking > 1) $('renameIcon').style.display = 'none';
+                    else $('renameIcon').style.display = 'block';
+                    if (copiedElements < 1) $('pasteIcon').style.display = 'none';
+                    else $('pasteIcon').style.display = 'block';
+                    if (shaking > 0) $('cutIcon').style.display = 'block';
+                    else $('cutIcon').style.display = "none";
+                    $('deleteIcon').style.display = 'block';
+                    $('downloadIcon').style.display = 'block';
+                    $('copyIcon').style.display = 'block';
+                    toggleFileSettings(false,true);
+                } 
+
+            }
+            doubleTapped = false;
+        },300)
+            
+    }
+    
    mylatesttap = new Date().getTime();
    oldEle = element;
 
 }
+function displayPopUp(text) {
+    $('pupup').innerHTML = text;
+    $('pupup').style.opacity = "0";
+    $('pupup').style.display = "block";
+    setTimeout(function() {
+        $('pupup').style.opacity = "1";
+        
+            setTimeout(function() {
+                $('pupup').style.opacity = "0";
+                setTimeout(function() {
+                    $('pupup').style.display = "none";
+                },100)
+            },1000)
+    },100)
+    
+}
+function classPaste() {
+    let dir = findDirectory(os);
+    for (let i = 0; i < copiedElements.length; i++) {
+        dir.add(copiedElements[i]);
+    }
+    dir.open();
+    os.save();
+}
+function classCopy() {
+    copiedElements = [...selectedElements];
+    
+    displayPopUp("Copied!");
+    if (copiedElements < 1) $('pasteIcon').style.display = 'none';
+    else $('pasteIcon').style.display = 'block';
+    if (copiedElements < 1) $('cutIcon').style.display = 'none';
+    else $('cutIcon').style.display = 'block';
+
+}
+function classRename() {
+    selectedElements[0].rename(false,true);
+    
+}
+function classDelete() {
+    selectedElements[0].delete();
+}
 function createFileDom(src,name,width1,width2,id) {
     return `
         <div style="max-width: ${width1}px;width:${width1}px" class="folder">
-            <img id="folderIMG${id}" onclick="doubletap(this)" style="width:${width2}px" class="folderImage" src=${src}>
+            <div style="width: ${width2}px; height: ${width2}px">
+                <img id="folderIMG${id}" onclick="doubletap(this)"" class="folderImage" src=${src}>
+            </div>
             <div style="font-size: ${width1*.2}px;width:${width1}px" class="folderTitle">${name}</div>
         </div>
     `;
@@ -492,7 +960,6 @@ function getDOMAddButton() {
     return `<div id="addButton" class="addButton">+</div>`;
 }
 function addMenu(element) {
-    element = $('addButton');
     if ($('.addMenu').style.display == "none" || $('.addMenu').style.display == "") {
         $('.addMenu').style.display = "block";
         var rect = element.getBoundingClientRect();
@@ -532,7 +999,6 @@ function openFolder(element) {
 $('goForward').addEventListener("click",function() {
     if (forwardPath.length > 0) {
         goInDirectory(os,forwardPath[0]);
-        forwardPath.shift();
     }
 
     testForwardAndBackDOM();
@@ -552,14 +1018,14 @@ function testForwardAndBackDOM(back = true) {
 
 }
 function findDirectory(dir,path) {
-    path = path ? path : $('path').innerHTML;
+    path = path ? path : $('path').realPath;
     let paths = path.split('/');
     let splitColon = paths[0].split(":");
     paths.shift();
-    let newPath = splitColon.concat(paths);;
+    let newPath = splitColon.concat(paths);
     for (let i = 1; i < newPath.length-1; i++) {
         findKidInDir: for (let j = 0; j < dir.kids.length; j++) {
-            if (dir.kids[j].name == newPath[i]) {
+            if (String(dir.kids[j].name) == newPath[i]) {
                 dir = dir.kids[j];
                 break findKidInDir;
             }
@@ -570,6 +1036,66 @@ function findDirectory(dir,path) {
 function goInDirectory(dir,path) {
     dir = findDirectory(dir,path);
     dir.open();
+}
+
+function toggleFileSettings(toggle = false,open) {
+    let dom = $('.fileSettings');
+
+    if (toggle) {
+        dom.classList.remove("fileSettings3");
+        dom.classList.remove("fileSettings2");
+        
+        dom.css({
+            maxHeight: "0px",
+        }) 
+        return;
+    }
+
+    if (dom.classList.contains("fileSettings2") && !open) {
+        fileSettingsClose();
+    } else {
+        fileSettingsOpen();
+    } 
+}
+function fileSettingsClose(doAnimation = true) {
+    let dom = $('.fileSettings');
+
+    if (doAnimation) dom.classList.add("fileSettings3");
+    setTimeout(function() {
+        dom.classList.remove("fileSettings3");
+        dom.classList.remove("fileSettings2");
+        dom.css({
+            maxHeight: "0px",
+        }) 
+    },140)
+
+}
+function clearSelectedElements() {
+    selectedElements = [];
+    let Class = findDirectory(os)
+
+    if (!Class) {
+        console.log("Couldn't Find Class, Reading " + Class + ", clearSelectedElements() failed.")
+        return;
+    }
+
+    for (let i = 0; i < Class.kids.length; i++) {
+        if ($('folderIMG' + i).classList.contains("shake")) {
+            $('folderIMG' + i).classList.remove("shake")
+        }
+    }
+}
+
+
+function fileSettingsOpen() {
+    let dom = $('.fileSettings');
+    dom.classList.add("fileSettings2");
+    setTimeout(function() {
+        dom.css({
+            maxHeight: "200px",
+        }) 
+    },140)
+
 }
 
 testForwardAndBackDOM(false);
