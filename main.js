@@ -96,24 +96,28 @@ class file {
         )
     }
     alreadyExists(Class,alreadyExists,fakeName) {
+        console.log("---------Already Exists--------");
         this.createScreen(
             [false,[
                 {
                     type: "title",
-                    text: "File " + fakeName + " Already Exists",
+                    text: "File " + Class.name + " Already Exists",
                 },
                 {
                     type: "replaceRename",
                     class: Class,
                     alreadyExists: alreadyExists,
-                    fakeName: fakeName,
+                    fakeName: Class.name,
                 }
             ]
             ]
         );
+        console.log("First Kid In DIR: ",findDirectory(os).kids[0].name)
     }
     rename(Class,alreadyExists) {
-        console.log(Class,alreadyExists)
+        console.log("-------Rename------------")
+        console.log("First Kid In DIR: ",findDirectory(os).kids[0].name)
+        console.log("Class:",Class,"Already Exists:",alreadyExists)
         this.createScreen(
             [false,[
                 {
@@ -271,8 +275,12 @@ class file {
                     os.save();
                     $('.addItemScreen').style.display = "none";
 
+                    
+
                 }
                 $('aiRename2' + i).onclick = function() {
+                    console.log("-------Replace rename------")
+                    console.log("First Kid In DIR: ",findDirectory(os).kids[0].name)
                     this.class.rename(this.class,this.alreadyExists);
 
                 }
@@ -280,10 +288,14 @@ class file {
 
             if (item.type == 'rename') {
                 
+                console.log("-----CS Rename------")
+                console.log(0,"First Kid In DIR: ",findDirectory(os).kids[0].name)
                 $("aiRename" + i).amount = useARR[1].length;
                 $("aiRename" + i).class = item.class;
                 $("aiRename" + i).alreadyExists = item.alreadyExists;
                 $('aiRename' + i).onclick = function() {
+                    console.log("-----CS Rename Clicked------")
+                    console.log(1,"First Kid In DIR: ",findDirectory(os).kids[0].name)
                     let name = "Untitled " + findUntitleds();
 
 
@@ -296,6 +308,7 @@ class file {
 
                         }
                     }
+                    console.log("name",name)
 
                     
                     let isNameAllowed = testNameInDir(name);
@@ -307,18 +320,28 @@ class file {
                             selectedElements[0].alreadyExists(selectedElements[0],true,name);
                         }
                     } else {
-                        console.log("hey",this.class,this.alreadyExists)
+                        console.log(2,"First Kid In DIR: ",findDirectory(os).kids[0].name)
                         let dir = findDirectory(os);
-                        if (this.class && !this.alreadyExists ) {
+                        if (this.class && !this.alreadyExists) {
+                            
+                            this.class = Object.assign(Object.create(Object.getPrototypeOf(this.class)), this.class)
                             this.class.name = name;
-                            
-                            console.log(this.class.name)
-                            
+                            console.log("First Kid In DIR: ",findDirectory(os).kids[0].name)
                             dir.add(this.class)
+                            console.log(3,"First Kid In DIR: ",findDirectory(os).kids[0].name)
                         }
                         else {
-                            selectedElements[0].changeName(name);
-                            selectedElements[0].name = name;
+                            console.log("waddup",this.class.name)
+                            if (this.class.newItem) {
+                                this.class.name = name;
+                                console.log("skat",this.class.skat,"kids",findDirectory(os).kids.length)
+                                this.class.newItem = false;
+                                dir.add(this.class)
+                                console.log("skat",this.class.skat,"kids",findDirectory(os).kids.length)
+                            } else {
+                                selectedElements[0].changeName(name);
+                            }
+
                         }
     
                         dir.open(true);
@@ -351,8 +374,8 @@ class file {
                     
                     let dir = findDirectory(os);
                     let newItem = new this.Class(name);
-                    newItem.className = newItem.constructor.name
-                    ;
+                    newItem.className = newItem.constructor.name;
+
                     for (let i = 0; i < this.amount; i++) {
                         if ($("checklistGroup" + i)) {
                             for (let j = 0; j < $("checklistGroup" + i).addList.length; j++) {
@@ -455,26 +478,29 @@ class fileSystem extends file {
 
         this.path = name + ":";
     }
-    add = function(toAdd,start,alreadyExists = false) {
-        toAdd.display = this.display;
-        toAdd.pathDisplay = this.pathDisplay;
-        toAdd.path = this.path + toAdd.name + '/';
-        toAdd.goBack = this.goBack;
-        toAdd.addMenu = this.addMenu;
-        toAdd.parent = this;
+    add = function(toAdd,start) {
+        console.log(toAdd)
         
         if (!start) {
-            console.log(testNameInDir(toAdd.name));
             let isNameAllowed = testNameInDir(toAdd.name);
-            console.log(toAdd.name,isNameAllowed)
             if (!isNameAllowed) {
-                console.log("here")
-                toAdd.alreadyExists(toAdd,isNameAllowed,toAdd.name);
+                toAdd.alreadyExists(toAdd,false);
             } else {
-                console.log('ey')
+                toAdd.display = this.display;
+                toAdd.pathDisplay = this.pathDisplay;
+                toAdd.path = this.path + toAdd.name + '/';
+                toAdd.goBack = this.goBack;
+                toAdd.addMenu = this.addMenu;
+                toAdd.parent = this;
                 this.kids.push(toAdd);
             }
         } else {
+            toAdd.display = this.display;
+            toAdd.pathDisplay = this.pathDisplay;
+            toAdd.path = this.path + toAdd.name + '/';
+            toAdd.goBack = this.goBack;
+            toAdd.addMenu = this.addMenu;
+            toAdd.parent = this;
             this.kids.push(toAdd);
         }
         
@@ -845,9 +871,10 @@ function displayPopUp(text) {
     
 }
 function classPaste() {
+    let list = [...copiedElements];
     let dir = findDirectory(os);
-    for (let i = 0; i < copiedElements.length; i++) {
-        dir.add(copiedElements[i]);
+    for (let i = 0; i < list.length; i++) {
+        dir.add(list[i]);
     }
     dir.open();
     os.save();
