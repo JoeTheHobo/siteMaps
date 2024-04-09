@@ -4,6 +4,7 @@ let filePath = "";
 let isDoubleClick = true;
 let forwardPath = [];
 let fileSets = [];
+let cuttingFiles = false;
 /*
     Possible Class Types
     autherizedPeoples - Txt (Name, Number, Position)
@@ -869,6 +870,10 @@ function displayPopUp(text) {
             },1000)
     },100)
     
+}
+function classCut() {
+    cuttingFiles = true;
+    classCopy();
 }
 function classPaste() {
     let list = [...copiedElements];
